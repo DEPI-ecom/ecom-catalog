@@ -6,6 +6,8 @@ import { AppError } from "../utils/app-error.js";
 import { parseQuery } from "../utils/validate.js";
 
 const productQuerySchema = z.object({
+    q: z.string().trim().optional(),
+
     categoryId: z.string().optional(),
 
     minPrice: z.coerce.number().min(0).optional(),
@@ -49,6 +51,23 @@ export async function getProducts(req, res) {
     const where = {
         isActive: true
     };
+
+    if (filters.q) {
+        where.OR = [
+            {
+                name: {
+                    contains: filters.q,
+                    mode: "insensitive"
+                }
+            },
+            {
+                description: {
+                    contains: filters.q,
+                    mode: "insensitive"
+                }
+            }
+        ];
+    }
 
     if (filters.categoryId) {
         where.categoryId = filters.categoryId;
