@@ -4,6 +4,7 @@ import helmet from "helmet";
 import productRoutes from "./routes/product.routes.js";
 import categoryRoutes from "./routes/category.routes.js";
 import healthRoutes from "./routes/health.routes.js";
+import internalRoutes from "./routes/internal.routes.js";
 
 import {
     notFound,
@@ -18,6 +19,7 @@ app.use(express.json({ limit: "10kb" }));
 app.use("/products", productRoutes);
 app.use("/categories", categoryRoutes);
 app.use("/health", healthRoutes);
+app.use("/internal", internalRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
