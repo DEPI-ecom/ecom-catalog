@@ -42,3 +42,8 @@ model Product {
   @@index([isActive])
   @@map("products")
 }
+
+model StockConfirmation {
+  orderId   String   @id
+  createdAt DateTime @default(now())
+}

@@ -9,7 +9,8 @@ const envSchema = z.object({
         "test",
         "production"
     ]).default("development"),
-    DATABASE_URL: z.string().min(1)
+    DATABASE_URL: z.string().min(1),
+    JWT_SECRET: z.string().min(32)
 });
 
 const result = envSchema.safeParse(process.env);
