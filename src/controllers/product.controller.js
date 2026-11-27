@@ -6,7 +6,7 @@ import { AppError } from "../utils/app-error.js";
 import { parseQuery } from "../utils/validate.js";
 
 const productQuerySchema = z.object({
-    q: z.string().trim().optional(),
+    q: z.string().trim().max(100).optional(),
 
     categoryId: z.string().optional(),
 
