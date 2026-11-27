@@ -2,10 +2,9 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
     test: {
-        include: ['tests/**/*.test.js'],
         env: {
-            NODE_ENV: 'test'
-            // DATABASE_URL comes from ecom-catalog/.env (catalog_db, seeded).
+            NODE_ENV: 'test',
+            JWT_SECRET: 'test-secret-that-is-at-least-32-characters-long'
         }
     }
 });
