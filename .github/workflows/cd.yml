@@ -1,6 +1,7 @@
 name: CD
 
-# Publishes the image only after CI succeeded for a push to main.
+# Publishes the image only after CI succeeded for a push to main,
+# then writes the new tag to ecom-deploy so Argo CD deploys it.
 on:
   workflow_run:
     workflows: ["CI"]
@@ -9,6 +10,11 @@ on:
 
 permissions:
   contents: read
+
+# One deployment at a time, so two runs cannot update the tag together.
+concurrency:
+  group: cd-ecom-catalog
+  cancel-in-progress: false
 
 jobs:
   push-image:
@@ -48,3 +54,40 @@ jobs:
           docker build -t "$IMAGE:$SHA" -t "$IMAGE:latest" .
           docker push "$IMAGE:$SHA"
           docker push "$IMAGE:latest"
+
+      - name: Check out ecom-deploy
+        if: steps.check.outputs.has == 'true'
+        uses: actions/checkout@v6
+        with:
+          repository: DEPI-ecom/ecom-deploy
+          ref: main
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
+          path: deploy
+
+      - name: Set the new image tag in ecom-deploy
+        if: steps.check.outputs.has == 'true'
+        working-directory: deploy
+        run: |
+          FILE=charts/ecom-catalog/values.yaml
+          sed -i "s/^tag:.*/tag: \"$SHA\"/" "$FILE"
+          grep -qx "tag: \"$SHA\"" "$FILE"
+
+          if git diff --quiet; then
+            echo "ecom-deploy already has this tag"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "deploy: ecom-catalog $SHA"
+
+          # Another service may push at the same time, so update and retry.
+          for attempt in $(seq 1 15); do
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            sleep $((RANDOM % 5 + 1))
+            git pull --rebase origin main
+          done
+          echo "::error::Could not push the new tag to ecom-deploy"
+          exit 1
